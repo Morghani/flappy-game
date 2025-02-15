@@ -1,11 +1,11 @@
 const config = {
     type: Phaser.AUTO,
-    width: 800,
-    height: 600,
+    width: 320,
+    height: 480,
     physics: {
         default: 'arcade',
         arcade: {
-            gravity: { y: 500 },
+            gravity: { y: 800 }, // ✅ تعديل الجاذبية لتقليل السقوط السريع
             debug: false
         }
     },
@@ -31,36 +31,40 @@ function preload() {
 }
 
 function create() {
-    this.add.image(400, 300, 'background');
+    this.add.image(160, 240, 'background'); // ✅ تصحيح موضع الخلفية
 
-    player = this.physics.add.sprite(100, 300, 'bird');
+    player = this.physics.add.sprite(100, 200, 'bird'); // ✅ وضع البداية الصحيح
     player.setCollideWorldBounds(true);
 
     pipes = this.physics.add.group();
 
     cursors = this.input.keyboard.createCursorKeys();
 
+    // ✅ تأخير التصادم حتى لا تنتهي اللعبة فورًا
+    this.time.delayedCall(1000, () => {
+        this.physics.add.collider(player, pipes, gameOver, null, this);
+    });
+
+    // ✅ تعديل تأخير ظهور الأنابيب
     this.time.addEvent({
-        delay: 1500,
+        delay: 2000, // ⏳ زيادة الوقت بين كل أنبوب
         callback: addPipeRow,
         callbackScope: this,
         loop: true
     });
 
     scoreText = this.add.text(20, 20, 'Score: 0', { fontSize: '20px', fill: '#fff' });
-
-    this.physics.add.collider(player, pipes, gameOver, null, this);
 }
 
 function update() {
-    if (cursors.space.isDown) {
-        player.setVelocityY(-200);
+    if (cursors.space.isDown || this.input.activePointer.isDown) {
+        player.setVelocityY(-250); // ✅ ضبط القفزة
     }
 }
 
 function addPipeRow() {
-    let pipeTop = pipes.create(800, Phaser.Math.Between(50, 250), 'pipe').setOrigin(0, 1);
-    let pipeBottom = pipes.create(800, pipeTop.y + 150, 'pipe').setOrigin(0, 0);
+    let pipeTop = pipes.create(320, Phaser.Math.Between(50, 250), 'pipe').setOrigin(0, 1);
+    let pipeBottom = pipes.create(320, pipeTop.y + 150, 'pipe').setOrigin(0, 0);
 
     pipes.setVelocityX(-200);
 
@@ -79,7 +83,16 @@ function addPipeRow() {
 }
 
 function gameOver() {
-    this.physics.pause();
-    player.setTint(0xff0000);
-    this.add.text(300, 250, 'Game Over', { fontSize: '40px', fill: '#fff' });
+    if (player.active) { // ✅ منع تكرار إنهاء اللعبة
+        this.physics.pause();
+        player.setTint(0xff0000);
+        this.add.text(100, 200, 'Game Over', { fontSize: '20px', fill: '#fff' });
+
+        // ✅ إعادة تشغيل اللعبة بعد ثانيتين
+        this.time.delayedCall(2000, () => {
+            this.scene.restart();
+        });
+
+        player.active = false;
+    }
 }
