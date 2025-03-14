@@ -10,20 +10,20 @@ const config = {
         }
     },
     scene: {
-        preload: preload,
-        create: create,
-        update: update
+        preload,
+        create,
+        update
     }
 };
 
 const game = new Phaser.Game(config);
 
-let player;
-let cursors;
+let bird;
 let pipes;
+let cursors;
 let score = 0;
 let scoreText;
-let hasCollided = false;
+let isGameOver = false;
 
 function preload() {
     this.load.image('background', 'assets/background.png');
@@ -33,49 +33,47 @@ function preload() {
 
 function create() {
     this.add.image(160, 240, 'background');
-
-    player = this.physics.add.sprite(100, 200, 'bird');
-    player.setCollideWorldBounds(true);
+    bird = this.physics.add.sprite(50, 240, 'bird');
+    bird.setCollideWorldBounds(true);
 
     pipes = this.physics.add.group();
-
-    cursors = this.input.keyboard.createCursorKeys();
-
-    // ✅ نؤخر التصادم مع الأنابيب بعد 2 ثانية
-    this.time.delayedCall(2000, () => {
-        this.physics.add.collider(player, pipes, gameOver, null, this);
-    });
-
-    // ✅ نبدأ بإضافة الأنابيب بعد 2 ثانية برضه
     this.time.addEvent({
-        delay: 2000,
-        callback: addPipeRow,
+        delay: 1500,
+        callback: addPipes,
         callbackScope: this,
         loop: true
     });
 
-    scoreText = this.add.text(20, 20, 'Score: 0', { fontSize: '20px', fill: '#fff' });
+    this.physics.add.collider(bird, pipes, hitPipe, null, this);
+
+    cursors = this.input.keyboard.createCursorKeys();
+    this.input.on('pointerdown', flap, this);
+
+    scoreText = this.add.text(10, 10, 'Score: 0', { fontSize: '20px', fill: '#fff' });
 }
 
 function update() {
-    if (!hasCollided && (cursors.space.isDown || this.input.activePointer.isDown)) {
-        player.setVelocityY(-250);
-    }
+    if (isGameOver) return;
+    if (cursors.space.isDown) flap();
 }
 
-function addPipeRow() {
-    const gap = 120;
-    const pipeTopY = Phaser.Math.Between(50, 250);
-    const pipeBottomY = pipeTopY + gap;
+function flap() {
+    bird.setVelocityY(-250);
+}
 
-    let pipeTop = pipes.create(320, pipeTopY, 'pipe').setOrigin(0, 1);
-    let pipeBottom = pipes.create(320, pipeBottomY, 'pipe').setOrigin(0, 0);
+function addPipes() {
+    const gap = 120;
+    const top = Phaser.Math.Between(50, 250);
+    const bottom = top + gap;
+
+    const pipeTop = pipes.create(320, top, 'pipe').setOrigin(0, 1);
+    const pipeBottom = pipes.create(320, bottom, 'pipe').setOrigin(0, 0);
 
     pipeTop.body.allowGravity = false;
     pipeBottom.body.allowGravity = false;
 
-    pipeTop.setVelocityX(-150);
-    pipeBottom.setVelocityX(-150);
+    pipeTop.setVelocityX(-200);
+    pipeBottom.setVelocityX(-200);
 
     pipeTop.body.immovable = true;
     pipeBottom.body.immovable = true;
@@ -84,17 +82,10 @@ function addPipeRow() {
     scoreText.setText('Score: ' + score);
 }
 
-function gameOver() {
-    if (hasCollided) return;
-    hasCollided = true;
-
+function hitPipe() {
+    if (isGameOver) return;
+    isGameOver = true;
     this.physics.pause();
-    player.setTint(0xff0000);
-    this.add.text(100, 200, 'Game Over', { fontSize: '20px', fill: '#fff' });
-
-    this.time.delayedCall(2000, () => {
-        this.scene.restart();
-        hasCollided = false;
-    });
+    bird.setTint(0xff0000);
+    this.add.text(80, 220, 'Game Over', { fontSize: '24px', fill: '#fff' });
 }
-
