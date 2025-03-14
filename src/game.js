@@ -5,8 +5,8 @@ const config = {
     physics: {
         default: 'arcade',
         arcade: {
-            gravity: { y: 800 }, // ✅ تعديل الجاذبية لتقليل السقوط السريع
-            debug: false
+            gravity: { y: 600 }, // ✅ تقليل الجاذبية
+            debug: true          // ✅ تفعيل الـ Debug Mode
         }
     },
     scene: {
@@ -31,23 +31,23 @@ function preload() {
 }
 
 function create() {
-    this.add.image(160, 240, 'background'); // ✅ تصحيح موضع الخلفية
+    this.add.image(160, 240, 'background');
 
-    player = this.physics.add.sprite(100, 200, 'bird'); // ✅ وضع البداية الصحيح
+    player = this.physics.add.sprite(100, 200, 'bird'); // ✅ مكان بداية مناسب
     player.setCollideWorldBounds(true);
 
     pipes = this.physics.add.group();
 
     cursors = this.input.keyboard.createCursorKeys();
 
-    // ✅ تأخير التصادم حتى لا تنتهي اللعبة فورًا
-    this.time.delayedCall(1000, () => {
+    // ✅ تأخير تفعيل التصادم حتى لا يخسر فوراً
+    this.time.delayedCall(2000, () => {
         this.physics.add.collider(player, pipes, gameOver, null, this);
     });
 
-    // ✅ تعديل تأخير ظهور الأنابيب
+    // ✅ تأخير ظهور الأنابيب
     this.time.addEvent({
-        delay: 2000, // ⏳ زيادة الوقت بين كل أنبوب
+        delay: 2000,
         callback: addPipeRow,
         callbackScope: this,
         loop: true
@@ -58,41 +58,42 @@ function create() {
 
 function update() {
     if (cursors.space.isDown || this.input.activePointer.isDown) {
-        player.setVelocityY(-250); // ✅ ضبط القفزة
+        player.setVelocityY(-250); // ✅ ضبط قوة القفز
     }
 }
 
 function addPipeRow() {
-    let pipeTop = pipes.create(320, Phaser.Math.Between(50, 250), 'pipe').setOrigin(0, 1);
-    let pipeBottom = pipes.create(320, pipeTop.y + 150, 'pipe').setOrigin(0, 0);
+    const gap = 120;
+    const pipeTopY = Phaser.Math.Between(50, 250);
+    const pipeBottomY = pipeTopY + gap;
 
-    pipes.setVelocityX(-200);
+    let pipeTop = pipes.create(320, pipeTopY, 'pipe').setOrigin(0, 1);
+    let pipeBottom = pipes.create(320, pipeBottomY, 'pipe').setOrigin(0, 0);
 
-    pipeTop.body.immovable = true;
-    pipeBottom.body.immovable = true;
     pipeTop.body.allowGravity = false;
     pipeBottom.body.allowGravity = false;
 
-    pipeTop.checkWorldBounds = true;
-    pipeBottom.checkWorldBounds = true;
-    pipeTop.outOfBoundsKill = true;
-    pipeBottom.outOfBoundsKill = true;
+    pipeTop.setVelocityX(-150);     // ✅ تقليل السرعة
+    pipeBottom.setVelocityX(-150);
+
+    pipeTop.body.immovable = true;
+    pipeBottom.body.immovable = true;
 
     score += 1;
     scoreText.setText('Score: ' + score);
 }
 
 function gameOver() {
-    if (player.active) { // ✅ منع تكرار إنهاء اللعبة
-        this.physics.pause();
-        player.setTint(0xff0000);
-        this.add.text(100, 200, 'Game Over', { fontSize: '20px', fill: '#fff' });
+    if (!player.active) return; // ✅ منع التكرار
 
-        // ✅ إعادة تشغيل اللعبة بعد ثانيتين
-        this.time.delayedCall(2000, () => {
-            this.scene.restart();
-        });
+    this.physics.pause();
+    player.setTint(0xff0000);
 
-        player.active = false;
-    }
+    this.add.text(100, 200, 'Game Over', { fontSize: '20px', fill: '#fff' });
+
+    this.time.delayedCall(2000, () => {
+        this.scene.restart();
+    });
+
+    player.active = false;
 }
