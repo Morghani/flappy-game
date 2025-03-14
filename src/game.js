@@ -5,8 +5,8 @@ const config = {
     physics: {
         default: 'arcade',
         arcade: {
-            gravity: { y: 600 }, // ✅ تقليل الجاذبية
-            debug: true          // ✅ تفعيل الـ Debug Mode
+            gravity: { y: 600 },
+            debug: false
         }
     },
     scene: {
@@ -23,6 +23,7 @@ let cursors;
 let pipes;
 let score = 0;
 let scoreText;
+let hasCollided = false;
 
 function preload() {
     this.load.image('background', 'assets/background.png');
@@ -33,19 +34,19 @@ function preload() {
 function create() {
     this.add.image(160, 240, 'background');
 
-    player = this.physics.add.sprite(100, 200, 'bird'); // ✅ مكان بداية مناسب
+    player = this.physics.add.sprite(100, 200, 'bird');
     player.setCollideWorldBounds(true);
 
     pipes = this.physics.add.group();
 
     cursors = this.input.keyboard.createCursorKeys();
 
-    // ✅ تأخير تفعيل التصادم حتى لا يخسر فوراً
+    // ✅ نؤخر التصادم مع الأنابيب بعد 2 ثانية
     this.time.delayedCall(2000, () => {
         this.physics.add.collider(player, pipes, gameOver, null, this);
     });
 
-    // ✅ تأخير ظهور الأنابيب
+    // ✅ نبدأ بإضافة الأنابيب بعد 2 ثانية برضه
     this.time.addEvent({
         delay: 2000,
         callback: addPipeRow,
@@ -57,8 +58,8 @@ function create() {
 }
 
 function update() {
-    if (cursors.space.isDown || this.input.activePointer.isDown) {
-        player.setVelocityY(-250); // ✅ ضبط قوة القفز
+    if (!hasCollided && (cursors.space.isDown || this.input.activePointer.isDown)) {
+        player.setVelocityY(-250);
     }
 }
 
@@ -73,7 +74,7 @@ function addPipeRow() {
     pipeTop.body.allowGravity = false;
     pipeBottom.body.allowGravity = false;
 
-    pipeTop.setVelocityX(-150);     // ✅ تقليل السرعة
+    pipeTop.setVelocityX(-150);
     pipeBottom.setVelocityX(-150);
 
     pipeTop.body.immovable = true;
@@ -84,16 +85,16 @@ function addPipeRow() {
 }
 
 function gameOver() {
-    if (!player.active) return; // ✅ منع التكرار
+    if (hasCollided) return;
+    hasCollided = true;
 
     this.physics.pause();
     player.setTint(0xff0000);
-
     this.add.text(100, 200, 'Game Over', { fontSize: '20px', fill: '#fff' });
 
     this.time.delayedCall(2000, () => {
         this.scene.restart();
+        hasCollided = false;
     });
-
-    player.active = false;
 }
+
