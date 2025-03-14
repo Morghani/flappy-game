@@ -1,5 +1,6 @@
 body {
     margin: 0;
+<<<<<<< HEAD
     display: flex;
     justify-content: center;
     align-items: center;
@@ -9,3 +10,9 @@ body {
 canvas {
     border: 2px solid black;
 }
+=======
+    padding: 0;
+    background-color: #70c5ce;
+    overflow: hidden;
+}
+>>>>>>> 8ea4f7b (initial commit)
